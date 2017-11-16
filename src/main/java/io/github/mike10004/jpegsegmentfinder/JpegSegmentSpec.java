@@ -1,4 +1,4 @@
-package io.github.mike10004.jpegiptcreader;
+package io.github.mike10004.jpegsegmentfinder;
 
 
 

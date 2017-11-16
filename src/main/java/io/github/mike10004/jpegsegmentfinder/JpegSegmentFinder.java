@@ -18,7 +18,7 @@
  *    https://drewnoakes.com/code/exif/
  *    https://github.com/drewnoakes/metadata-extractor
  */
-package io.github.mike10004.jpegiptcreader;
+package io.github.mike10004.jpegsegmentfinder;
 
 import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.jpeg.JpegSegmentMetadataReader;
@@ -37,7 +37,7 @@ import java.util.Set;
  *
  * @author Drew Noakes https://drewnoakes.com
  */
-public class JpegSegmentReader
+public class JpegSegmentFinder
 {
     /**
      * The 0xFF byte that signals the start of a segment.

@@ -1,4 +1,4 @@
-package io.github.mike10004.jpegiptcreader;
+package io.github.mike10004.jpegsegmentfinder;
 
 import com.drew.imaging.ImageProcessingException;
 import com.drew.imaging.jpeg.JpegSegmentType;
@@ -19,14 +19,13 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.function.BinaryOperator;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
-public class JpegSegmentReaderTest {
+public class JpegSegmentFinderTest {
 
     private static final boolean dumpMeta = true;
     private static final boolean verbose = false;
@@ -56,7 +55,7 @@ public class JpegSegmentReaderTest {
         JpegSegmentSpecSet specs;
         try (CountingInputStream inputStream = new CountingInputStream(new FileInputStream(imageFile))) {
             inputStream_ = inputStream;
-            specs = new JpegSegmentReader().readMetadata(inputStream, new IptcReader());
+            specs = new JpegSegmentFinder().readMetadata(inputStream, new IptcReader());
         }
         long bytesRead = inputStream_.getByteCount();
         if (verbose) System.out.format("read %d bytes from %d-byte file%n", bytesRead, imageFile.length());
