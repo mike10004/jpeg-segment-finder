@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.mike10004</groupId>
-    <artifactId>jpeg-segment-reader</artifactId>
+    <artifactId>jpeg-segment-finder</artifactId>
     <version>0.1</version>
     <build>
         <pluginManagement>
