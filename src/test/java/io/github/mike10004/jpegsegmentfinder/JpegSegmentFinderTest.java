@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.junit.Assert.assertEquals;
@@ -52,16 +53,16 @@ public class JpegSegmentFinderTest {
         checkState(countErrors(originalMetadata) == 0, "must start out error free");
         checkState(containsIptcCaption(originalMetadata), "this test requires that the input image contains an IPTC Abstract/Caption");
         CountingInputStream inputStream_;
-        JpegSegmentSpecSet specs;
+        List<JpegSegmentSpec> specs;
         try (CountingInputStream inputStream = new CountingInputStream(new FileInputStream(imageFile))) {
             inputStream_ = inputStream;
-            specs = new JpegSegmentFinder().readMetadata(inputStream, new IptcReader());
+            specs = new JpegSegmentFinder().findSegments(inputStream, new IptcReader());
         }
         long bytesRead = inputStream_.getByteCount();
         if (verbose) System.out.format("read %d bytes from %d-byte file%n", bytesRead, imageFile.length());
-        if (verbose) specs.getSegments().forEach(System.out::println);
+        if (verbose) specs.forEach(System.out::println);
 
-        JpegSegmentSpec iptcSegment = specs.getSegments().stream().filter(spec -> spec.type == JpegSegmentType.APPD).findAny().orElse(null);
+        JpegSegmentSpec iptcSegment = specs.stream().filter(spec -> spec.type == JpegSegmentType.APPD).findAny().orElse(null);
         assertNotNull(iptcSegment);
 
         ByteSource iptcSegmentBytes = Files.asByteSource(imageFile).slice(iptcSegment.headerOffset, iptcSegment.fullLength());

@@ -28,7 +28,9 @@ import com.drew.lang.StreamReader;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -54,16 +56,21 @@ public class JpegSegmentFinder
      */
     private static final byte MARKER_EOI = (byte) 0xD9;
 
-
-    public JpegSegmentSpecSet readMetadata(InputStream inputStream, JpegSegmentMetadataReader reader) throws JpegProcessingException, IOException {
-
+    /**
+     * Find segments matching the given segment metadata reader. Make sure the
+     * reader's {@link JpegSegmentMetadataReader#getSegmentTypes()} returns a
+     * nonempty set first.
+     * @param inputStream fresh input stream containing JPEG data
+     * @param reader a metadata reader
+     * @return a list of segments
+     */
+    public List<JpegSegmentSpec> findSegments(InputStream inputStream, JpegSegmentMetadataReader reader) throws JpegProcessingException, IOException {
         Set<JpegSegmentType> segmentTypes = new HashSet<>();
         reader.getSegmentTypes().forEach(segmentTypes::add);
-        JpegSegmentSpecSet segmentData = readSegments(new StreamReader(inputStream), segmentTypes);
-        return segmentData;
+        return readSegments(new StreamReader(inputStream), segmentTypes);
     }
 
-    private static JpegSegmentSpecSet readSegments(final SequentialReader reader, Iterable<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException     {
+    private static List<JpegSegmentSpec> readSegments(final SequentialReader reader, Iterable<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException     {
         Objects.requireNonNull(segmentTypes);
         // Must be big-endian
         assert (reader.isMotorolaByteOrder());
@@ -79,7 +86,7 @@ public class JpegSegmentFinder
             segmentTypeBytes.add(segmentType.byteValue);
         }
 
-        JpegSegmentSpecSet segmentData = JpegSegmentSpecSet.create();
+        List<JpegSegmentSpec> segmentData = new ArrayList<>();
 
         do {
             long segmentStart = reader.getPosition();
@@ -121,7 +128,7 @@ public class JpegSegmentFinder
                 long segmentContentStart = reader.getPosition();
                 reader.skip(segmentLength);
                 // skip throws EOF if it can't skip as much as specified
-                segmentData.addSegment(JpegSegmentType.fromByte(segmentType), segmentStart, segmentContentStart, segmentLength);
+                segmentData.add(new JpegSegmentSpec(JpegSegmentType.fromByte(segmentType), segmentStart, segmentContentStart, segmentLength));
             } else {
                 // Some if the JPEG is truncated, just return what data we've already gathered
                 if (!reader.trySkip(segmentLength)) {
