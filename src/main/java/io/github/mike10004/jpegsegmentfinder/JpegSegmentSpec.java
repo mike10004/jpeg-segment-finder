@@ -29,7 +29,7 @@ public class JpegSegmentSpec {
 
     /**
      * Constructs a new instance.
-     * @param marker the metadata type marker (see {@link com.drew.imaging.jpeg.JpegSegmentType}
+     * @param marker the metadata type marker (see {@code com.drew.imaging.jpeg.JpegSegmentType}
      * @param headerOffset offset from the start of a file where the segment header begins
      * @param contentOffset offset from the start of a file where the segment content begins
      * @param contentLength segment content length
