@@ -20,12 +20,6 @@
  */
 package io.github.mike10004.jpegsegmentfinder;
 
-import com.drew.imaging.jpeg.JpegProcessingException;
-import com.drew.imaging.jpeg.JpegSegmentMetadataReader;
-import com.drew.imaging.jpeg.JpegSegmentType;
-import com.drew.lang.SequentialReader;
-import com.drew.lang.StreamReader;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -33,7 +27,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Service class that finds metadata segments in a JPEG input stream.
@@ -59,20 +52,8 @@ public class JpegSegmentFinder
     private static final byte MARKER_EOI = (byte) 0xD9;
 
     /**
-     * Find segments matching the given segment types.
-     * @see #findSegments(InputStream, Set)
-     */
-    public List<JpegSegmentSpec> findSegmentsByType(InputStream inputStream, Set<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException {
-        Set<Byte> segmentTypeBytes = segmentTypes.stream()
-                .map(type -> type.byteValue)
-                .collect(Collectors.toSet());
-        return findSegments(inputStream, segmentTypeBytes);
-    }
-
-    /**
      * Find segments matching the given segment marker bytes. If the
-     * reader's {@link JpegSegmentMetadataReader#getSegmentTypes()} method
-     * returns an empty set, an empty list will be returned immediately.
+     * set of segment markers is empty, an empty list will be returned immediately.
      * In any case, do not rely on the returned list being mutable.
      * This method does not close the given input stream, and probably doesn't
      * consume the stream until exhausted. Results are unpredictable if
@@ -81,12 +62,15 @@ public class JpegSegmentFinder
      * @param inputStream fresh input stream containing JPEG data
      * @param segmentMarkers set of segment marker bytes for which segments are to be returned
      * @return a list of segments
+     * @throws JpegSegmentFinderException if the input stream is verifiably not positioned at the
+     * beginning of a byte sequence constituting a JPEG image, or if the JPEG data is otherwise
+     * verifiably corrupt or inconsistent
      */
-    public List<JpegSegmentSpec> findSegments(InputStream inputStream, Set<Byte> segmentMarkers) throws JpegProcessingException, IOException {
+    public List<JpegSegmentSpec> findSegments(InputStream inputStream, Set<Byte> segmentMarkers) throws JpegSegmentFinderException, IOException {
         return findSegments(new StreamReader(inputStream), segmentMarkers);
     }
 
-    private static List<JpegSegmentSpec> findSegments(final SequentialReader reader, Set<Byte> segmentTypeBytes) throws JpegProcessingException, IOException {
+    private static List<JpegSegmentSpec> findSegments(final SequentialReader reader, Set<Byte> segmentTypeBytes) throws JpegSegmentFinderException, IOException {
         Objects.requireNonNull(segmentTypeBytes);
         if (segmentTypeBytes.isEmpty()) {
             return Collections.emptyList();
@@ -97,7 +81,7 @@ public class JpegSegmentFinder
         // first two bytes should be JPEG magic number
         final int magicNumber = reader.getUInt16();
         if (magicNumber != 0xFFD8) {
-            throw new JpegProcessingException("JPEG data is expected to begin with 0xFFD8 (ÿØ) not 0x" + Integer.toHexString(magicNumber));
+            throw new JpegSegmentFinderException("JPEG data is expected to begin with 0xFFD8 (ÿØ) not 0x" + Integer.toHexString(magicNumber));
         }
 
         List<JpegSegmentSpec> segmentData = new ArrayList<>();
@@ -134,7 +118,7 @@ public class JpegSegmentFinder
             segmentLength -= 2;
 
             if (segmentLength < 0)
-                throw new JpegProcessingException("JPEG segment size would be less than zero");
+                throw new JpegSegmentFinderException("JPEG segment size would be less than zero");
 
             // Check whether we are interested in this segment
             if (segmentTypeBytes.contains(segmentType)) {

@@ -6,7 +6,7 @@
 
     <groupId>com.github.mike10004</groupId>
     <artifactId>jpeg-segment-finder</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
     <name>jpeg-segment-finder</name>
     <description>Determine the offsets and lengths of metadata segments in a JPEG file</description>
     <url>https://github.com/mike10004/jpeg-segment-finder</url>
@@ -147,6 +147,7 @@
             <groupId>com.drewnoakes</groupId>
             <artifactId>metadata-extractor</artifactId>
             <version>2.10.1</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

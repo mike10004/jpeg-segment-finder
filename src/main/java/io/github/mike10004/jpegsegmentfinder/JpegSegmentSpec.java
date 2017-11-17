@@ -6,17 +6,19 @@ package io.github.mike10004.jpegsegmentfinder;
 public class JpegSegmentSpec {
 
     /**
-     * Segment type.
+     * Segment byte marker. These are described in various specification documents.
+     * See http://dev.exiv2.org/projects/exiv2/wiki/The_Metadata_in_JPEG_files for
+     * some good reading.
      */
     public final byte marker;
 
     /**
-     * Offset from the start of a file where the segment header begins.
+     * Offset (from the start of a file) where the segment header begins.
      */
     public final long headerOffset;
 
     /**
-     * Offset from the start of a file where the segment content begins.
+     * Offset (from the start of a file) where the segment content begins.
      */
     public final long contentOffset;
 
@@ -40,8 +42,8 @@ public class JpegSegmentSpec {
     }
 
     /**
-     * Computes the full length of the statement, from the start of the header to the end of the
-     * segment content.
+     * Computes the full length of the statement, from the start of the header
+     * to the end of the segment content.
      * @return the full length of the segment
      */
     public long fullLength() {
@@ -59,5 +61,36 @@ public class JpegSegmentSpec {
                 ", contentLength=" + contentLength +
                 ", fullLength=" + fullLength() +
                 '}';
+    }
+
+    /**
+     * Computes the header length. The header length is the length of the
+     * interval of bytes between the header start and the content start position.
+     * @return the header length
+     */
+    public long headerLength() {
+        return contentOffset - headerOffset;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        JpegSegmentSpec that = (JpegSegmentSpec) o;
+
+        if (marker != that.marker) return false;
+        if (headerOffset != that.headerOffset) return false;
+        if (contentOffset != that.contentOffset) return false;
+        return contentLength == that.contentLength;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) marker;
+        result = 31 * result + (int) (headerOffset ^ (headerOffset >>> 32));
+        result = 31 * result + (int) (contentOffset ^ (contentOffset >>> 32));
+        result = 31 * result + (int) (contentLength ^ (contentLength >>> 32));
+        return result;
     }
 }
