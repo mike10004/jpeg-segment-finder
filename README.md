@@ -4,14 +4,16 @@
 # jpeg-segment-finder
 
 Java library to determine the offsets and lengths of metadata segments in 
-a JPEG file.
+a JPEG file. This library is intended to be small and not pull in a lot of
+external dependencies. Use it if you want to *parse* JPEG metadata yourself
+but don't want to *find* JPEG metadata yourself.
 
 ## Maven
 
     <dependency>
         <groupId>com.github.mike10004</groupId>
         <artifactId>jpeg-segment-finder</artifactId>
-        <version>0.4</version>
+        <version>0.5</version>
     </dependency>
 
 ## Usage
