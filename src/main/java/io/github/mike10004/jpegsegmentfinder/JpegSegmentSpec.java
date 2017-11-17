@@ -1,9 +1,5 @@
 package io.github.mike10004.jpegsegmentfinder;
 
-import com.drew.imaging.jpeg.JpegSegmentType;
-
-import java.util.Objects;
-
 /**
  * Class that represents the specification of a file segment.
  */
@@ -12,7 +8,7 @@ public class JpegSegmentSpec {
     /**
      * Segment type.
      */
-    public final JpegSegmentType type;
+    public final byte marker;
 
     /**
      * Offset from the start of a file where the segment header begins.
@@ -31,13 +27,13 @@ public class JpegSegmentSpec {
 
     /**
      * Constructs a new instance.
-     * @param type segment type
+     * @param marker the metadata type marker (see {@link com.drew.imaging.jpeg.JpegSegmentType}
      * @param headerOffset offset from the start of a file where the segment header begins
      * @param contentOffset offset from the start of a file where the segment content begins
      * @param contentLength segment content length
      */
-    public JpegSegmentSpec(JpegSegmentType type, long headerOffset, long contentOffset, long contentLength) {
-        this.type = Objects.requireNonNull(type);
+    public JpegSegmentSpec(byte marker, long headerOffset, long contentOffset, long contentLength) {
+        this.marker = marker;
         this.contentOffset = contentOffset;
         this.headerOffset = headerOffset;
         this.contentLength = contentLength;
@@ -53,33 +49,12 @@ public class JpegSegmentSpec {
         return (contentOffset - headerOffset) + contentLength;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        JpegSegmentSpec that = (JpegSegmentSpec) o;
-
-        if (contentOffset != that.contentOffset) return false;
-        if (headerOffset != that.headerOffset) return false;
-        if (contentLength != that.contentLength) return false;
-        return type == that.type;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = type.hashCode();
-        result = 31 * result + (int) (contentOffset ^ (contentOffset >>> 32));
-        result = 31 * result + (int) (headerOffset ^ (headerOffset >>> 32));
-        result = 31 * result + (int) (contentLength ^ (contentLength >>> 32));
-        return result;
-    }
 
     @Override
     public String toString() {
         return "JpegSegmentSpec{" +
-                "" + type +
-                ", contentOffset=" + contentOffset +
+                "" + String.format("0x%02X", marker) +
+                "; contentOffset=" + contentOffset +
                 ", headerOffset=" + headerOffset +
                 ", contentLength=" + contentLength +
                 ", fullLength=" + fullLength() +

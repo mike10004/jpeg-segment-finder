@@ -29,7 +29,6 @@ import com.drew.lang.StreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -60,7 +59,18 @@ public class JpegSegmentFinder
     private static final byte MARKER_EOI = (byte) 0xD9;
 
     /**
-     * Find segments matching the given segment metadata reader. If the
+     * Find segments matching the given segment types.
+     * @see #findSegments(InputStream, Set)
+     */
+    public List<JpegSegmentSpec> findSegmentsByType(InputStream inputStream, Set<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException {
+        Set<Byte> segmentTypeBytes = segmentTypes.stream()
+                .map(type -> type.byteValue)
+                .collect(Collectors.toSet());
+        return findSegments(inputStream, segmentTypeBytes);
+    }
+
+    /**
+     * Find segments matching the given segment marker bytes. If the
      * reader's {@link JpegSegmentMetadataReader#getSegmentTypes()} method
      * returns an empty set, an empty list will be returned immediately.
      * In any case, do not rely on the returned list being mutable.
@@ -69,18 +79,18 @@ public class JpegSegmentFinder
      * the input stream provides non-JPEG data or corrupt JPEG data.
      *
      * @param inputStream fresh input stream containing JPEG data
-     * @param segmentTypes set of segment types to return
+     * @param segmentMarkers set of segment marker bytes for which segments are to be returned
      * @return a list of segments
      */
-    public List<JpegSegmentSpec> findSegments(InputStream inputStream, Set<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException {
-        if (segmentTypes.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return findSegments(new StreamReader(inputStream), segmentTypes);
+    public List<JpegSegmentSpec> findSegments(InputStream inputStream, Set<Byte> segmentMarkers) throws JpegProcessingException, IOException {
+        return findSegments(new StreamReader(inputStream), segmentMarkers);
     }
 
-    private static List<JpegSegmentSpec> findSegments(final SequentialReader reader, Collection<JpegSegmentType> segmentTypes) throws JpegProcessingException, IOException {
-        Objects.requireNonNull(segmentTypes);
+    private static List<JpegSegmentSpec> findSegments(final SequentialReader reader, Set<Byte> segmentTypeBytes) throws JpegProcessingException, IOException {
+        Objects.requireNonNull(segmentTypeBytes);
+        if (segmentTypeBytes.isEmpty()) {
+            return Collections.emptyList();
+        }
         // Must be big-endian
         assert (reader.isMotorolaByteOrder());
 
@@ -90,12 +100,7 @@ public class JpegSegmentFinder
             throw new JpegProcessingException("JPEG data is expected to begin with 0xFFD8 (ÿØ) not 0x" + Integer.toHexString(magicNumber));
         }
 
-        Set<Byte> segmentTypeBytes = segmentTypes.stream()
-                .map(type -> type.byteValue)
-                .collect(Collectors.toSet());
-
         List<JpegSegmentSpec> segmentData = new ArrayList<>();
-
         do {
             long segmentStart = reader.getPosition();
             // Find the segment marker. Markers are zero or more 0xFF bytes, followed
@@ -136,7 +141,7 @@ public class JpegSegmentFinder
                 long segmentContentStart = reader.getPosition();
                 reader.skip(segmentLength);
                 // skip throws EOF if it can't skip as much as specified
-                segmentData.add(new JpegSegmentSpec(JpegSegmentType.fromByte(segmentType), segmentStart, segmentContentStart, segmentLength));
+                segmentData.add(new JpegSegmentSpec(segmentType, segmentStart, segmentContentStart, segmentLength));
             } else {
                 // Some if the JPEG is truncated, just return what data we've already gathered
                 if (!reader.trySkip(segmentLength)) {

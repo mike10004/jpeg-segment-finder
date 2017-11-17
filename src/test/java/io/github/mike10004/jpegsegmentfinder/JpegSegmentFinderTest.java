@@ -52,7 +52,6 @@ public class JpegSegmentFinderTest {
 
     @Test
     public void findIptcCaption() throws Exception {
-
         File imageFile = new File(getClass().getResource("/image-with-iptc-caption.jpg").toURI());
         Metadata originalMetadata = dumpMetadata(imageFile);
         checkState(countErrors(originalMetadata) == 0, "must start out error free");
@@ -63,13 +62,13 @@ public class JpegSegmentFinderTest {
         List<JpegSegmentSpec> specs;
         try (CountingInputStream inputStream = new CountingInputStream(new FileInputStream(imageFile))) {
             inputStream_ = inputStream;
-            specs = finder.findSegments(inputStream, iptcMarkers);
+            specs = finder.findSegmentsByType(inputStream, iptcMarkers);
         }
         long bytesRead = inputStream_.getByteCount();
         if (verbose) System.out.format("read %d bytes from %d-byte file%n", bytesRead, imageFile.length());
         if (verbose) specs.forEach(System.out::println);
 
-        JpegSegmentSpec iptcSegment = specs.stream().filter(spec -> spec.type == JpegSegmentType.APPD).findAny().orElse(null);
+        JpegSegmentSpec iptcSegment = specs.stream().filter(spec -> spec.marker == JpegSegmentType.APPD.byteValue).findAny().orElse(null);
         assertNotNull(iptcSegment);
 
         ByteSource iptcSegmentBytes = Files.asByteSource(imageFile).slice(iptcSegment.headerOffset, iptcSegment.fullLength());
@@ -92,7 +91,7 @@ public class JpegSegmentFinderTest {
         assertFalse("contains IPTC caption", containsIptcCaption(modifiedMetadata));
         List<JpegSegmentSpec> segmentsAfterClean;
         try (InputStream in = new FileInputStream(iptcFreeFile)) {
-            segmentsAfterClean = finder.findSegments(in, iptcMarkers);
+            segmentsAfterClean = finder.findSegmentsByType(in, iptcMarkers);
         }
         assertEquals("expect empty after cleaning", Collections.emptyList(), segmentsAfterClean);
     }
@@ -103,7 +102,7 @@ public class JpegSegmentFinderTest {
         Set<JpegSegmentType> exifMarkers = ImmutableSet.of(JpegSegmentType.APP1);
         List<JpegSegmentSpec> segments;
         try (InputStream in = new FileInputStream(imageFile)) {
-            segments = new JpegSegmentFinder().findSegments(in, exifMarkers);
+            segments = new JpegSegmentFinder().findSegmentsByType(in, exifMarkers);
         }
         segments.forEach(System.out::println);
         assertNotEquals("expect some exif segments", Collections.emptyList(), segments);

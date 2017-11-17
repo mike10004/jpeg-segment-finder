@@ -16,10 +16,12 @@ a JPEG file.
 
 ## Usage
 
+Find IPTC segments marked by byte 0xED:
+
     JpegSegmentFinder finder = new JpegSegmentFinder();
     List<JpegSegmentSpec> segments;
     try (InputStream in = new FileInputStream(jpegFile)) {
-        segments = finder.findSegments(in, Collections.singleton(JpegSegmentType.APPD));
+        segments = finder.findSegments(in, Collections.singleton((byte) 0xED));
     }
     JpegSegmentSpec iptc = segments.get(0);
     byte[] jpegBytes = Files.readAllBytes(jpegFile.toPath());

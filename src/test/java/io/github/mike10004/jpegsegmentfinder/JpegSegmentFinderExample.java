@@ -1,6 +1,5 @@
 package io.github.mike10004.jpegsegmentfinder;
 
-import com.drew.imaging.jpeg.JpegSegmentType;
 import com.google.common.io.BaseEncoding;
 import org.apache.commons.lang3.StringUtils;
 
@@ -16,10 +15,11 @@ public class JpegSegmentFinderExample {
 
     public static void main(String[] args) throws Exception {
         File jpegFile = new File(JpegSegmentFinderExample.class.getResource("/image-with-iptc-caption.jpg").toURI());
+        // Find IPTC segments marked by byte 0xED
         JpegSegmentFinder finder = new JpegSegmentFinder();
         List<JpegSegmentSpec> segments;
         try (InputStream in = new FileInputStream(jpegFile)) {
-            segments = finder.findSegments(in, Collections.singleton(JpegSegmentType.APPD));
+            segments = finder.findSegments(in, Collections.singleton((byte) 0xED));
         }
         JpegSegmentSpec iptc = segments.get(0);
         byte[] jpegBytes = Files.readAllBytes(jpegFile.toPath());
