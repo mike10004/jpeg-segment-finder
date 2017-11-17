@@ -6,7 +6,7 @@
 
     <groupId>com.github.mike10004</groupId>
     <artifactId>jpeg-segment-finder</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
     <name>jpeg-segment-finder</name>
     <description>Determine the offsets and lengths of metadata segments in a JPEG file</description>
     <url>https://github.com/mike10004/jpeg-segment-finder</url>

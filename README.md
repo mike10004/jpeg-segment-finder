@@ -11,7 +11,7 @@ a JPEG file.
     <dependency>
         <groupId>com.github.mike10004</groupId>
         <artifactId>jpeg-segment-finder</artifactId>
-        <version>0.3</version>
+        <version>0.4</version>
     </dependency>
 
 ## Usage
@@ -19,14 +19,14 @@ a JPEG file.
     JpegSegmentFinder finder = new JpegSegmentFinder();
     List<JpegSegmentSpec> segments;
     try (InputStream in = new FileInputStream(jpegFile)) {
-        segments = finder.findSegments(in, new IptcReader());
+        segments = finder.findSegments(in, Collections.singleton(JpegSegmentType.APPD));
     }
     JpegSegmentSpec iptc = segments.get(0);
     byte[] jpegBytes = Files.readAllBytes(jpegFile.toPath());
     int from = (int) iptc.contentOffset;
     int to = from + (int) iptc.contentLength;
     byte[] segmentBytes = Arrays.copyOfRange(jpegBytes, from, to);
-    // ...analyze those segment bytes as you please...
+    // ...analyze those segments bytes as you please...
 
 ## Credits
 

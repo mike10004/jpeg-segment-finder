@@ -8,6 +8,7 @@ import com.drew.metadata.file.FileMetadataDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.iptc.IptcReader;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.google.common.io.ByteSource;
 import com.google.common.io.Files;
@@ -19,11 +20,15 @@ import org.junit.Test;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class JpegSegmentFinderTest {
@@ -46,17 +51,19 @@ public class JpegSegmentFinderTest {
     }
 
     @Test
-    public void readMetadata() throws Exception {
+    public void findIptcCaption() throws Exception {
 
         File imageFile = new File(getClass().getResource("/image-with-iptc-caption.jpg").toURI());
         Metadata originalMetadata = dumpMetadata(imageFile);
         checkState(countErrors(originalMetadata) == 0, "must start out error free");
         checkState(containsIptcCaption(originalMetadata), "this test requires that the input image contains an IPTC Abstract/Caption");
+        Set<JpegSegmentType> iptcMarkers = ImmutableSet.copyOf(new IptcReader().getSegmentTypes());
+        JpegSegmentFinder finder = new JpegSegmentFinder();
         CountingInputStream inputStream_;
         List<JpegSegmentSpec> specs;
         try (CountingInputStream inputStream = new CountingInputStream(new FileInputStream(imageFile))) {
             inputStream_ = inputStream;
-            specs = new JpegSegmentFinder().findSegments(inputStream, new IptcReader());
+            specs = finder.findSegments(inputStream, iptcMarkers);
         }
         long bytesRead = inputStream_.getByteCount();
         if (verbose) System.out.format("read %d bytes from %d-byte file%n", bytesRead, imageFile.length());
@@ -83,6 +90,23 @@ public class JpegSegmentFinderTest {
         int numErrors = countErrors(modifiedMetadata);
         assertEquals("errors after operation", 0, numErrors);
         assertFalse("contains IPTC caption", containsIptcCaption(modifiedMetadata));
+        List<JpegSegmentSpec> segmentsAfterClean;
+        try (InputStream in = new FileInputStream(iptcFreeFile)) {
+            segmentsAfterClean = finder.findSegments(in, iptcMarkers);
+        }
+        assertEquals("expect empty after cleaning", Collections.emptyList(), segmentsAfterClean);
+    }
+
+    @Test
+    public void findExifSegments() throws Exception {
+        File imageFile = new File(getClass().getResource("/image-with-exif.jpg").toURI());
+        Set<JpegSegmentType> exifMarkers = ImmutableSet.of(JpegSegmentType.APP1);
+        List<JpegSegmentSpec> segments;
+        try (InputStream in = new FileInputStream(imageFile)) {
+            segments = new JpegSegmentFinder().findSegments(in, exifMarkers);
+        }
+        segments.forEach(System.out::println);
+        assertNotEquals("expect some exif segments", Collections.emptyList(), segments);
     }
 
     private static int countErrors(Metadata md) {
